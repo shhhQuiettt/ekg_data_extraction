@@ -220,9 +220,17 @@ def get_plots_roi(
 
 def main():
     argparser = argparse.ArgumentParser()
-    argparser.add_argument("--input_dir", type=str, help="Directory with input images")
     argparser.add_argument(
-        "--output_dir", type=str, help="Directory to save output CSV files"
+        "--input_dir",
+        type=str,
+        help="Directory with input images",
+        required=True,
+    )
+    argparser.add_argument(
+        "--output_dir",
+        type=str,
+        help="Directory to save output CSV files",
+        required=True,
     )
     argparser.add_argument(
         "--debug_dir",
@@ -344,9 +352,7 @@ def main():
             img_color,
             signal_functions,
             plot_areas,
-            save_path=plot_output_dir.joinpath(
-                f"{filename_base}_signal_functions.png"
-            ),
+            save_path=plot_output_dir.joinpath(f"{filename_base}_signal_functions.png"),
             display=False,
         )
 

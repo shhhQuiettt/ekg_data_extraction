@@ -1,9 +1,8 @@
-## Zawartość folderu `report/images`
-aliasing.png                images_binary.png            P3_1_signal_functions.png  P7_1_signal_functions.png      templates-board.png
-dummy_signal_functions.png  images_marked_templates.png  P5_1_signal_functions.png  template_board.png             wrong_templates.png
-I_contour.png               images_removed_labels.png    P6_1_signal_functions.png  template_matching_results.png
-
 # Ekstrakcja danych EKG ze zrzutu ekranu
+
+Krzysztof Skrobała 156039
+
+[link do repozytorium](https://github.com/shhhQuiettt/ekg_data_extraction)
 
 # Wprowadzenie
 
@@ -23,7 +22,7 @@ Zadanie polega na ekstrakcji danych EKG ze zrzutu ekranu. Celem jest przekształ
 uv venv
 source .venv/bin/activate
 uv sync
-python main.py --input_dir images --output_dir output_csv
+python main.py --input_dir INPUT_DIR --output_dir OUTPUT_DIR [--debug_dir DEBUG_DIR]
 ```
 
 ## Używając pip
@@ -31,8 +30,10 @@ python main.py --input_dir images --output_dir output_csv
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python main.py --input_dir images --output_dir output_csv
+python main.py --input_dir INPUT_DIR --output_dir OUTPUT_DIR [--debug_dir DEBUG_DIR]
 ```
+
+Opcjonalny argument `--debug_dir` pozwala na zapisanie obrazów z poszczególnych kroków ekstrakcji danych, co może być przydatne do debugowania i wizualizacji procesu. W szczególności `{image_name}_signal_function.png` pokazuje wykres funkcji EKG na tle oryginalnego obrazu
 
 # Metodologia
 
@@ -48,7 +49,7 @@ Pierwszym krokiem jest wykrycie linii poziomych, które reprezentują kanały EK
 
 ### Wyniki wykrywania kanałów z usuwaniem wykrytych szablonów z obrazu w odpowiedniej kolejności:
 
-![](./images/template_matching_results.png)
+![](report/images/template_matching_results.png)
 
 ## 2. Usunięcie kolorów oraz labali z obrazka.
 
@@ -67,6 +68,10 @@ Ponieważ zrzut ekranu jest standardowy, do binaryzacji wystarczy proste progowa
 
 Żeby zidentyfikować poprawny kanał Będziemy później używać odległości do labela 
 
+### Przykładowde wycięte obszary 
+![](report/images/P5_1.JPG_1.png)
+![](report/images/P5_1.JPG_2.png)
+
 
 ## 5. Extrakcja lini za pomocą konturów
 Na każdym z wyciętych obszarów szukamy konturów za pomocą funkcji `cv2.findContours`. Następnie filtrujemy znalezione kontury, aby znaleźć ten, który odpowiada krzywej funkcji. Pierwszym filtrem jest minimalna szerokość bounding boxa, która musi wynosić przynajmniej 80% szerokości całego obszaru. 
@@ -83,7 +88,7 @@ Po znalezieniu konturu, który odpowiada krzywej funkcji, przekształcamy go w d
 2. Następnie jako baseline wybieramy medianę `y`
 3. Obliczamy `pixels_per_ms` jako szerokość obszaru podzieloną przez 200ms
 4. Tworzymy nową oś od 0 do 200ms z krokiem 1ms
-5. Używamy `scipy.interpolate.interp1d` do interpolacji wartości `y` dla nowej osi `x`. Żeby uniknąć problemów z interpolacją, np. gdy funkcja ma gwałtowne zmiany, co jest częste w funkcjach EKG, używamy __interpolacji liniowej__.
+5. Używamy `scipy.interpolate.interp1d` do interpolacji wartości `y` dla nowej osi `x`. Żeby uniknąć problemów z interpolacją, np. gdy funkcja ma gwałtowne zmiany, co jest częste w funkcjach EKG, używamy _interpolacji liniowej_.
 
 Szczegóły znajdują się w funkcji `contour_to_signal_function()`
 
@@ -101,7 +106,4 @@ Szerokość obszaru to około 1920 pikseli, więc `pixels_per_ms` wynosi około 
 
 ## 7. Zapis danych do pliku CSV
 Na koniec zapisujemy dane do pliku CSV, gdzie każda kolumna odpowiada jednemu kanałowi, a każdy wiersz odpowiada wartościom w danym czasie (od 0 do 200ms z krokiem 1ms).
-
-
-
 
