@@ -6,9 +6,15 @@ Krzysztof Skrobała 156039
 
 # Wprowadzenie
 
-Zadanie polega na ekstrakcji danych EKG ze zrzutu ekranu. Celem jest przekształcenie obrazu zawierającego wykres EKG w dane numeryczne. Na danym zrzucie są widoczne dane z 200ms, a oś Y jest podzielona na 12 kanałów (bez COI i HIS). Krok czasowy powinien wynosić 1ms, co oznacza, że dla 200ms powinno być 200 punktów danych dla każdego kanału.
+Zadanie polega na ekstrakcji danych EKG ze zrzutu ekranu. Celem jest przekształcenie obrazu zawierającego wykres EKG w dane numeryczne. Oś Y jest podzielona na 12 kanałów (bez COI i HIS)
 
 ![](./images/P3_1.JPG)
+
+### Oś X
+
+Oś X powinna być skalibrowana zgodnie z poniższym obrazkiem, gdzie zaznaczony jest fragment 200ms. Z ręcznego pomiaru wynika, że jest to 226 pixeli, dając dokładność około 1.13 pixeli/ms.
+
+![](./images/P3_3.JPG)
 
 # Układ kodu
 - `main.py` - główny plik, który wykonuje wszystkie kroki ekstrakcji danych EKG 
@@ -33,7 +39,7 @@ pip install -r requirements.txt
 python main.py --input_dir INPUT_DIR --output_dir OUTPUT_DIR [--debug_dir DEBUG_DIR]
 ```
 
-Opcjonalny argument `--debug_dir` pozwala na zapisanie obrazów z poszczególnych kroków ekstrakcji danych, co może być przydatne do debugowania i wizualizacji procesu. W szczególności `{image_name}_signal_function.png` pokazuje wykres funkcji EKG na tle oryginalnego obrazu
+Argument `--debug_dir` pozwala na zapisanie obrazów z poszczególnych kroków ekstrakcji danych, co może być przydatne do debugowania i wizualizacji procesu. Domyślnie obrazy zapiszą się do folderu `./debug_dir`. W szczególności `{image_name}_signal_function.png` pokazuje wykres funkcji EKG na tle oryginalnego obrazu
 
 # Metodologia
 
@@ -64,9 +70,9 @@ Ponieważ zrzut ekranu jest standardowy, do binaryzacji wystarczy proste progowa
 
 ## 4. Ekstrakcja obszarów z wykresami
 
-Żeby zmniejszyć obszar poszukiwania pikseli, które odpowiadają krzywej funkcji, wycinamy z obrazu obszary, które odpowiadają wykresom. W tym celu używamy wcześniej wykrytych labeli kanałów. Dla każdego z nich dodajemy duży margines wertykalny, ponieważ niektóre kanały mają duże amplitudy. Minusem jest to że niektóry kanały zawierają fragmenty innych wykresów, a nawet całe inne kanały.
+Żeby zmniejszyć obszar poszukiwania pikseli, które odpowiadają krzywej funkcji, wycinamy z obrazu obszary, które odpowiadają wykresom. W tym celu używamy wcześniej wykrytych labeli kanałów. Dla każdego z nich dodajemy duży margines wertykalny, ponieważ niektóre kanały mają duże amplitudy. Minusem jest to że niektóry kanały zawierają fragmenty innych wykresów, a nawet całe inne kanały. Ucinamy też kilka pikseli z prawej strony (obramowanie)
 
-Żeby zidentyfikować poprawny kanał Będziemy później używać odległości do labela 
+Żeby zidentyfikować poprawny kanał będziemy później używać odległości do labela 
 
 ### Przykładowde wycięte obszary 
 ![](report/images/P5_1.JPG_1.png)
@@ -86,8 +92,8 @@ Po znalezieniu konturu, który odpowiada krzywej funkcji, przekształcamy go w d
 
 1. Najpierw dla każdego zduplikowanego `x` obliczamy średnią `y`
 2. Następnie jako baseline wybieramy medianę `y`
-3. Obliczamy `pixels_per_ms` jako szerokość obszaru podzieloną przez 200ms
-4. Tworzymy nową oś od 0 do 200ms z krokiem 1ms
+3. Obliczamy `pixels_per_ms` jako szerokość interwału (podanego w `P3_3.JPG`) obszaru podzieloną przez 200ms
+4. Tworzymy nową oś od z krokiem 1ms
 5. Używamy `scipy.interpolate.interp1d` do interpolacji wartości `y` dla nowej osi `x`. Żeby uniknąć problemów z interpolacją, np. gdy funkcja ma gwałtowne zmiany, co jest częste w funkcjach EKG, używamy _interpolacji liniowej_.
 
 Szczegóły znajdują się w funkcji `contour_to_signal_function()`
@@ -98,12 +104,7 @@ Szczegóły znajdują się w funkcji `contour_to_signal_function()`
 ![](report/images/P6_1_signal_functions.png)
 ![](report/images/P7_1_signal_functions.png)
 
-### Niedokładności
-Szerokość obszaru to około 1920 pikseli, więc `pixels_per_ms` wynosi około 9.6. Oznacza to, że występuje __aliasing__, ponieważ funkcja EKG może mieć zmiany, które trwają krócej niż 9.6ms, a więc nie są odpowiednio próbkowane. W rezultacie niektóre funkcje mogą być niedokładne, szczególnie te z dużymi amplitudami i szybkim narastaniem.
-
-![](report/images/aliasing.png)
-
 
 ## 7. Zapis danych do pliku CSV
-Na koniec zapisujemy dane do pliku CSV, gdzie każda kolumna odpowiada jednemu kanałowi, a każdy wiersz odpowiada wartościom w danym czasie (od 0 do 200ms z krokiem 1ms).
+Na koniec zapisujemy dane do pliku CSV, gdzie każda kolumna odpowiada jednemu kanałowi, a każdy wiersz odpowiada wartościom w danym czasie (od 0 z krokiem 1ms).
 

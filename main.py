@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 import os
 import argparse
@@ -17,9 +16,8 @@ from src.plots import (
 
 from src.types import PlotArea, SignalFunction
 
-IMAGES_DIR = Path("images")
 TEMPLATES_DIR = Path("templates")
-REPORT_IMAGES_DIR = Path("report", "images")
+PIXELS_PER_200MS = 226
 
 TEMPLATES = {
     "III": Path(TEMPLATES_DIR, "III.png"),
@@ -109,9 +107,6 @@ def contour_to_signal_function(
     resampled_y = interpolator(new_time_ms)
 
     assert new_time_ms.min() == 0.0
-    assert new_time_ms.max() == 199.0, (
-        f"Expected x to be in range [0, 199], but got min {x.min()} and max {x.max()}"
-    )
 
     return SignalFunction(
         label=label,
@@ -147,8 +142,12 @@ def get_signal_function_by_contour(plot_area: PlotArea) -> SignalFunction:
 
     selected_contour = valid_contours[closest_contour_idx]
 
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
     signal_function = contour_to_signal_function(
-        selected_contour, plot_area.label, pixels_per_200ms=width
+        selected_contour, plot_area.label, pixels_per_200ms=PIXELS_PER_200MS
     )
 
     return signal_function
@@ -255,7 +254,7 @@ def main():
     images_filenames = [filename for filename in os.listdir(input_dir)]
 
     for filename in images_filenames:
-        image_path = IMAGES_DIR.joinpath(filename)
+        image_path = input_dir.joinpath(filename)
         assert image_path.exists(), f"Image {filename} not found at {image_path}"
 
     for name, path in TEMPLATES.items():
@@ -273,7 +272,7 @@ def main():
     images_binary = []
 
     for image_idx, filename in enumerate(images_filenames):
-        image_path = IMAGES_DIR.joinpath(filename)
+        image_path = input_dir.joinpath(filename)
         img_color = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
         assert img_color is not None, (
             f"Failed to load image {filename} from {image_path}"
